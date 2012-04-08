@@ -1,4 +1,4 @@
-package edu.osu.cse.node;
+package edu.osu.cse.autocomplete.node;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -15,48 +15,54 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.osu.cse.datastructure.Trie;
-
-public class AutocompleteSlave {
+import edu.osu.cse.autocomplete.datastructure.Trie;
+import edu.osu.cse.autocomplete.utils.AutocompleteConstants;
+/**
+ * This class is a is a 
+ * @author karthik
+ *
+ */
+public class AutocompleteShard {
 	private int serverPort = 0;
 	private ServerSocket serverSock = null;
-	private static boolean loaded = false;
 	private char startCh;
 	private char endCh;
 	private static Trie trie = new Trie();
+	private static boolean loaded[] = new boolean[256];
 	
-	public AutocompleteSlave(int serverPort,char start,char end){
+	public AutocompleteShard(int serverPort,char start,char end){
 		this.serverPort=serverPort;
 		this.startCh=start;
 		this.endCh=end;
-		if(!loaded){
-			StringBuffer buffer = new StringBuffer();
-			for(char alpha=startCh;alpha<=endCh;++alpha){
-				try {
-					String moviesFile = "/tmp/"+alpha+"_movies.txt"; 
-					FileInputStream fis = new FileInputStream(moviesFile);
-					InputStreamReader isr = new InputStreamReader(fis, "ISO-8859-1");
-					Reader in = new BufferedReader(isr);
-					int ch;
-					while ((ch = in.read()) > -1) {
-						buffer.append((char)ch);
-						if(((char)ch)=='\n'){
-							trie.add(buffer.toString().toLowerCase());
-							buffer=new StringBuffer();
-						}
-					}
-					in.close();
-				} 
-				catch (IOException e) {
-					e.printStackTrace();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}finally{
-					loaded=true;
+	}
+	/**
+	 * This method loads movies starting with
+	 * @param alpha character.
+	 * @param alpha
+	 */
+	public void lazyLoad(char alpha){
+		StringBuffer buffer = new StringBuffer();
+		try {
+			String moviesFile = "/tmp/"+alpha+"_movies.txt"; 
+			FileInputStream fis = new FileInputStream(moviesFile);
+			InputStreamReader isr = new InputStreamReader(fis, "ISO-8859-1");
+			Reader in = new BufferedReader(isr);
+			int ch;
+			while ((ch = in.read()) > -1) {
+				buffer.append((char)ch);
+				if(((char)ch)=='\n'){
+					trie.add(buffer.toString().toLowerCase());
+					buffer=new StringBuffer();
 				}
 			}
+			in.close();
+			loaded[alpha]=true;
+		}catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		System.out.println("Done loading the movies database.....");
+		
 	}
 	public void start(){
 		Socket sock = null;
@@ -73,15 +79,15 @@ public class AutocompleteSlave {
 				out = new PrintWriter(sock.getOutputStream(), true);
 		        in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 				String prefix = in.readLine();
-	            System.out.println("Prefix : "+prefix);
+				if(!loaded[prefix.charAt(0)]){
+					System.out.println("Lazy loading...");
+					this.lazyLoad(prefix.charAt(0));
+				}
 	            List<String> listOfStrings = trie.CompleteString(prefix);
-	           // trie.dump();
-	            System.out.println("Got "+listOfStrings.size());
 	            StringBuffer strBuffer = new StringBuffer();
 	            for(String str:listOfStrings){
-	            		strBuffer.append(str.substring(0, str.length()-1)+",comma,");
+	            		strBuffer.append(str.substring(0, str.length()-1)+AutocompleteConstants.DELIMITER);
 	            }
-	            System.out.println("Sending - "+strBuffer);
 	            out.println(strBuffer.toString());
 	            in.close();
 	            out.close();
@@ -96,7 +102,7 @@ public class AutocompleteSlave {
 		int port = Integer.parseInt(args[0]);
 		String start_character = args[1].split("-")[0];
 		String end_character = args[1].split("-")[1];
-		AutocompleteSlave slave = new AutocompleteSlave(port,start_character.charAt(0),end_character.charAt(0));
+		AutocompleteShard slave = new AutocompleteShard(port,start_character.charAt(0),end_character.charAt(0));
 		slave.start();
 	}
 }

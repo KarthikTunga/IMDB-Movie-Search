@@ -1,4 +1,4 @@
-package edu.osu.cse.datastructure;
+package edu.osu.cse.autocomplete.datastructure;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;

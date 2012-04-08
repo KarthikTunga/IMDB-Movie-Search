@@ -1,4 +1,4 @@
-package edu.osu.cse.node;
+package edu.osu.cse.autocomplete.node;
 
 public class AutocompleteMaster {
 	public static void main(String[] args){

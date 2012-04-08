@@ -1,4 +1,4 @@
-package edu.osu.cse.database;
+package edu.osu.cse.autocomplete.webservice;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -23,10 +23,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import edu.osu.cse.datastructure.Trie;
-import edu.osu.cse.objects.JsonObject;
-import edu.osu.cse.objects.Movie;
-import edu.osu.cse.objects.StringPrefixJson;
+import edu.osu.cse.autocomplete.datastructure.Trie;
+import edu.osu.cse.autocomplete.node.AutocompleteShard;
+import edu.osu.cse.autocomplete.objects.JsonObject;
+import edu.osu.cse.autocomplete.objects.Movie;
+import edu.osu.cse.autocomplete.objects.StringPrefixJson;
+import edu.osu.cse.autocomplete.utils.AutocompleteConstants;
 
 
 
@@ -37,18 +39,18 @@ public class AutoComplete {
 	public Client client;
 
 	public AutoComplete(){
-		this.client = new Client("5.130.180.248",10000);
+		this.client = new Client("5.46.187.61",10000);
 	}
 	
 	@Path("list")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public JsonObject getMovieNames(@QueryParam("prefix") String str){
-		if(str.charAt(0)>='a' && str.charAt(0)<='e'){
-			this.client = new Client("5.130.180.248",10000);
-		}else{
-			this.client = new Client("localhost",10000);
-		}
+//		if(str.charAt(0)>='a' && str.charAt(0)<='e'){
+//			this.client = new Client("5.130.180.248",10000);
+//		}else{
+//			this.client = new Client("localhost",10000);
+//		}
 		List<Movie> listOfMovies = new ArrayList<Movie>();
 		List<String> result = new ArrayList<String>();
 		List<String> completeStrings = this.client.getCompleteStrings(str);
@@ -71,6 +73,12 @@ public class AutoComplete {
 		return new StringPrefixJson(stringPrefix.getPrefix());
 	}
 }
+/**
+ * This class communicates with the sharded nodes to get the
+ * complete string for a given prefix
+ * @author karthik
+ *
+ */
 class Client {
 	String serverHostname;
 	int serverPort;
@@ -89,7 +97,7 @@ class Client {
 	        in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 	        out.println(str);
             String result = in.readLine();
-            listOfStrings = Arrays.asList((result.split(",comma,")));
+            listOfStrings = Arrays.asList((result.split(AutocompleteConstants.DELIMITER)));
             sock.close();
             
 		} catch (UnknownHostException e) {
@@ -97,7 +105,6 @@ class Client {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	    System.out.println("################ RETURNING THE RESULT of LEN : "+listOfStrings.size());
 	    return listOfStrings;
 	}
 }

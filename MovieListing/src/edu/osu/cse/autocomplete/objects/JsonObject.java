@@ -1,4 +1,4 @@
-package edu.osu.cse.objects;
+package edu.osu.cse.autocomplete.objects;
 
 import java.util.List;
 
