@@ -99,16 +99,21 @@ public class Trie {
 	 * @return List<String>
 	 */
 	public List<String> CompleteString(String prefix) {
+		System.out.println("prefis is :"+prefix+"#####");
 		List<String> result = new ArrayList<String>();
 		Node tmp = this.headNode;
 		Set<Character> keySet = tmp.links.keySet();
-
+		for(char s :keySet){
+			System.out.println("keyset : "+s);
+		}
 		for (int i = 0; i < prefix.length(); ++i) {
 			if (!tmp.links.containsKey(prefix.charAt(i))) {
+				System.out.println("doesn't have "+prefix.charAt(i));
 				return result;
 			}
 			tmp = tmp.links.get(prefix.charAt(i));
 		}
+		System.out.println("going to autocomplete...");
 		getAutocompleteStrings(tmp, result, new StringBuffer(prefix.toLowerCase()));
 		return result;
 	}
@@ -164,9 +169,9 @@ public class Trie {
 	    } catch (Exception e) {
 			e.printStackTrace();
 		}
-	    
+	    t.dump();
 	    System.out.println("##################################");
-	    List<String> res = t.CompleteString("balls");
+	    List<String> res = t.CompleteString("a buried");
 		for (String str : res) {
 			System.out.println(str);
 		}

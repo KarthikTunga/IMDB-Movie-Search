@@ -4,7 +4,10 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.Reader;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,46 +29,34 @@ import edu.osu.cse.objects.Movie;
 import edu.osu.cse.objects.StringPrefixJson;
 
 
+
 @Path("/autocomplete")
 public class AutoComplete {
 	
 	static boolean loaded=false;
-	static Trie trie = new Trie();
+	public Client client;
 
 	public AutoComplete(){
-		if(!loaded){
-			StringBuffer buffer = new StringBuffer();
-			try {
-				FileInputStream fis = new FileInputStream("/home/karthik/movies-list.txt/movies.txt");
-				InputStreamReader isr = new InputStreamReader(fis, "ISO-8859-1");
-				Reader in = new BufferedReader(isr);
-				int ch;
-				while ((ch = in.read()) > -1) {
-					buffer.append((char)ch);
-					if(((char)ch)=='\n'){
-						this.trie.add(buffer.toString().toLowerCase());
-						buffer=new StringBuffer();
-					}
-				}
-				in.close();
-				this.trie.dump();
-			}catch (IOException e) {
-				e.printStackTrace();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}finally{
-				loaded=true;
-			}
-		}
+		this.client = new Client("5.130.180.248",10000);
 	}
 	
 	@Path("list")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public JsonObject getMovieNames(@QueryParam("prefix") String str){
+		if(str.charAt(0)>='a' && str.charAt(0)<='e'){
+			this.client = new Client("5.130.180.248",10000);
+		}else{
+			this.client = new Client("localhost",10000);
+		}
 		List<Movie> listOfMovies = new ArrayList<Movie>();
-		List<String> result = trie.CompleteString(str.toLowerCase());
+		List<String> result = new ArrayList<String>();
+		List<String> completeStrings = this.client.getCompleteStrings(str);
+		if(completeStrings!=null){
+			for(String str1 : completeStrings){
+				result.add(str1);
+			}
+		}
 		result.add("");
 		for(String string:result){
 			listOfMovies.add(new Movie(string));
@@ -78,5 +69,35 @@ public class AutoComplete {
 	@Produces(MediaType.APPLICATION_JSON)
 	public StringPrefixJson done(StringPrefixJson stringPrefix){
 		return new StringPrefixJson(stringPrefix.getPrefix());
+	}
+}
+class Client {
+	String serverHostname;
+	int serverPort;
+	public Client(String serverHostname,int serverPort){
+		this.serverHostname=serverHostname;
+		this.serverPort=serverPort;
+	}
+	public List<String> getCompleteStrings(String str){
+		Socket sock = null;
+		PrintWriter out = null;
+		BufferedReader in = null;
+		List<String> listOfStrings = new ArrayList<String>();
+	    try {
+			sock = new Socket(this.serverHostname,this.serverPort);
+			out = new PrintWriter(sock.getOutputStream(), true);
+	        in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+	        out.println(str);
+            String result = in.readLine();
+            listOfStrings = Arrays.asList((result.split(",comma,")));
+            sock.close();
+            
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	    System.out.println("################ RETURNING THE RESULT of LEN : "+listOfStrings.size());
+	    return listOfStrings;
 	}
 }
