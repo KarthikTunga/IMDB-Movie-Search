@@ -1,0 +1,9 @@
+This project provides an auto-complete feature over IMDB movie database.
+
+Changes before starting - 
+1. Change the ipaddress of the tomcat server in index.html (AutocompleteUI project)
+2. Start the Autocomplete Slave nodes ( java -Djava.ext.dirs="." -Xms512mb -Xmx4097m edu.osu.cse.node.AutocompleteSlave "port number" "start alphabeta-end alphabet)
+	example : java -Djava.ext.dirs="." -Xms512mb -Xmx4097m edu.osu.cse.node.AutocompleteSlave 10000 a-f
+
+The changes will be automated in the future.
+   
